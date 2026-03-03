@@ -1,0 +1,32 @@
+{
+  "gameSyncId" : "FSLP9T2ZRH",
+  "gameVersion" : "BLACK_ENGLISH",
+  "status" : "AWAKE",
+  "dreamerInfo" : null,
+  "cgearSkin" : null,
+  "dexSkin" : null,
+  "musical" : null,
+  "customCGearSkin" : null,
+  "customDexSkin" : null,
+  "customMusical" : null,
+  "levelsGained" : 0,
+  "encounters" : [ ],
+  "items" : [ ],
+  "avenueVisitors" : [ ],
+  "decor" : [ {
+    "id" : 1,
+    "name" : "Design Table"
+  }, {
+    "id" : 2,
+    "name" : "Design Stool"
+  }, {
+    "id" : 3,
+    "name" : "Flower Vase"
+  }, {
+    "id" : 4,
+    "name" : "Cuddle Rug"
+  }, {
+    "id" : 6,
+    "name" : "Wall Poster"
+  } ]
+}
