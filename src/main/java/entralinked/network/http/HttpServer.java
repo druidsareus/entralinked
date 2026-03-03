@@ -23,8 +23,6 @@ import entralinked.LauncherAgent;
 import entralinked.utility.CertificateGenerator;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
-import io.javalin.util.ConcurrencyUtil;
-import io.javalin.util.JavalinException;
 
 public class HttpServer {
     
@@ -34,8 +32,6 @@ public class HttpServer {
     private boolean started;
     
     public HttpServer(Entralinked entralinked) {
-        ConcurrencyUtil.INSTANCE.setUseLoom(false);
-        
         // Create certificate keystore
         KeyStore keyStore = null;
         
@@ -85,7 +81,7 @@ public class HttpServer {
         
         try {
             javalin.start();
-        } catch(JavalinException e) {
+        } catch(Exception e) {
             logger.error("Could not start HTTP server", e);
             return false;
         }
@@ -103,7 +99,7 @@ public class HttpServer {
         
         try {
             javalin.stop();
-        } catch(JavalinException e) {
+        } catch(Exception e) {
             logger.error("Could not stop HTTP server", e);
             return false;
         }

@@ -2,6 +2,11 @@ plugins {
     id 'java'
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
 project.ext {
     mainClass = 'entralinked.Entralinked'
     agentClass = 'entralinked.LauncherAgent'
@@ -18,19 +23,20 @@ configurations {
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.junit.platform:junit-platform-launcher:1.10.2'
     signedImplementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
-    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
-    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
-    implementation 'io.netty:netty-all:4.1.79.Final'
-    implementation 'io.javalin:javalin:5.5.0'
-    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0'
-    implementation 'com.formdev:flatlaf:3.1.1'
-    implementation 'com.formdev:flatlaf-extras:3.1.1'
-    implementation 'com.formdev:flatlaf-intellij-themes:3.1.1'
-    implementation 'com.miglayout:miglayout-swing:4.2' // Finally, a good fucking layout manager.
+    implementation 'org.apache.logging.log4j:log4j-core:2.23.1'
+    implementation 'org.apache.logging.log4j:log4j-api:2.23.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1'
+    implementation 'io.netty:netty-all:4.1.104.Final'
+    implementation 'io.javalin:javalin:5.6.3'
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1'
+    implementation 'com.formdev:flatlaf:3.4.1'
+    implementation 'com.formdev:flatlaf-extras:3.4.1'
+    implementation 'com.formdev:flatlaf-intellij-themes:3.4.1'
+    implementation 'com.miglayout:miglayout-swing:4.2'
     implementation 'org.swinglabs.swingx:swingx-autocomplete:1.6.5-1'
 }
 
@@ -44,7 +50,7 @@ sourceSets {
 }
 
 test {
-    workingDir = "testRun";
+    workingDir = "testRun"
     useJUnitPlatform()
     
     doFirst {
@@ -87,6 +93,3 @@ task run(type: JavaExec) {
         mkdir workingDir
     }
 }
-    
-sourceCompatibility = JavaVersion.VERSION_21
-targetCompatibility = JavaVersion.VERSION_21
