@@ -16,7 +16,6 @@ import javax.swing.JTextField;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.formdev.flatlaf.extras.components.FlatTextField;
 
 import entralinked.Configuration;
 import entralinked.Entralinked;
@@ -27,10 +26,10 @@ import net.miginfocom.swing.MigLayout;
 public class SettingsPanel extends JPanel {
     
     private final Entralinked entralinked;
-    private final JTextField dnsAddressField;
-    private final JLabel dnsStatusLabel;
-    private final JButton saveButton;
-    private final JButton resetButton;
+    private JTextField dnsAddressField;
+    private JLabel dnsStatusLabel;
+    private JButton saveButton;
+    private JButton resetButton;
     
     public SettingsPanel(Entralinked entralinked) {
         this.entralinked = entralinked;
@@ -85,8 +84,8 @@ public class SettingsPanel extends JPanel {
         
         // DNS Address input
         panel.add(new JLabel("DNS Address:"), "");
-        dnsAddressField = new FlatTextField();
-        dnsAddressField.setPlaceholderText("e.g., 192.168.1.100 or game-server.local");
+        dnsAddressField = new JTextField();
+        dnsAddressField.setText("");
         panel.add(dnsAddressField, "growx");
         
         // Status label
