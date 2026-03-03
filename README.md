@@ -16,6 +16,10 @@ It can also be used to Memory Link with a Black or White save file if you don't 
 
 For users: [Quick Setup Guide](https://github.com/kuroppoi/entralinked/wiki/Setup)
 
+## DNS Configuration
+
+The application now includes a Settings tab for intuitive DNS configuration through the GUI, eliminating the need for manual config editing or command-line arguments. See [SETTINGS_TAB.md](SETTINGS_TAB.md) for details.
+
 ## Building
 
 #### Prerequisites
@@ -34,8 +38,20 @@ Execute `entralinked.jar`, or without the user interface:
 ```
 java -jar entralinked.jar disablegui
 ```
+
 Entralinked has a built-in DNS server.\
 In order for your game to connect, you must configure the DNS settings of your DS.\
 By default, Entralinked is configured to automatically use the local host of the system.\
-This approach is not always accurate, however, and you may need to manually configure it in `config.json`.\
+This approach is not always accurate, however, and you may need to manually configure it.
+
+### Configuring DNS
+
+DNS can be configured in three ways:
+
+1. **GUI Settings Tab (Recommended)** - Click Settings in the main window
+2. **Configuration File** - Edit `config.json` with `dnsAddress` field
+3. **Command-Line Argument** - Use `--dns 192.168.1.100` flag
+
+For detailed instructions, see [DNS_CONFIGURATION_UPDATED.md](DNS_CONFIGURATION_UPDATED.md) and [SETTINGS_TAB.md](SETTINGS_TAB.md).
+
 After tucking in a Pokémon, navigate to http://localhost/dashboard/profile.html to configure Game Sync settings.

@@ -126,6 +126,7 @@ public class MainView {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Console", panel);
         tabbedPane.addTab("Dashboard", new DashboardPanel(entralinked));
+        tabbedPane.addTab("Settings", new entralinked.gui.panels.SettingsPanel(entralinked));
         
         // Create window
         frame = new JFrame("Entralinked");

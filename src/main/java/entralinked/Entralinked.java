@@ -51,6 +51,22 @@ public class Entralinked {
         // Read command line arguments
         CommandLineArguments arguments = new CommandLineArguments(args);
         
+        // Override DNS address from command line if provided
+        Configuration baseConfig = loadConfigFile();
+        if(arguments.dnsAddress() != null) {
+            configuration = new Configuration(
+                baseConfig.hostName(),
+                arguments.dnsAddress(),
+                baseConfig.clearPlayerDreamInfoOnWake(),
+                baseConfig.allowOverwritingPlayerDreamInfo(),
+                baseConfig.allowPlayerGameVersionMismatch(),
+                baseConfig.allowWfcRegistrationThroughLogin()
+            );
+        } else {
+            configuration = baseConfig;
+        }
+        logger.info("Using configuration {}", configuration);
+        
         // Create GUI if enabled
         if(!arguments.disableGui()) {
             try {
@@ -65,28 +81,44 @@ public class Entralinked {
             logger.error("Could not add BouncyCastle to SystemClassLoader search", LauncherAgent.getCause());
         }
         
-        // Load config
-        configuration = loadConfigFile();
-        logger.info("Using configuration {}", configuration);
+
         
-        // Get host address
-        InetAddress hostAddress = null;
-        String hostName = configuration.hostName();
+        // Determine DNS address to broadcast
+        InetAddress dnsAddress = null;
+        String configuredDnsAddress = configuration.dnsAddress();
         
-        if(hostName.equals("local") || hostName.equals("localhost")) {
-            hostAddress = NetworkUtility.getLocalHost();
-        } else {
+        if(configuredDnsAddress != null && !configuredDnsAddress.isEmpty()) {
             try {
-                hostAddress = InetAddress.getByName(hostName);
+                dnsAddress = InetAddress.getByName(configuredDnsAddress);
+                logger.info("Using custom DNS address from configuration: {}", configuredDnsAddress);
             } catch(UnknownHostException e) {
-                hostAddress = NetworkUtility.getLocalHost();
-                logger.error("Could not resolve host name - falling back to {} ", hostAddress, e);
+                logger.error("Could not resolve configured DNS address {} - falling back to local host", configuredDnsAddress, e);
+                dnsAddress = null;
             }
         }
         
-        // Emergency stop if host address manages to be null somehow
-        if(hostAddress == null) {
-            logger.fatal("ABORTING - hostAddress is null!");
+        // Fall back to host address if DNS address not configured
+        if(dnsAddress == null) {
+            InetAddress hostAddress = null;
+            String hostName = configuration.hostName();
+            
+            if(hostName.equals("local") || hostName.equals("localhost")) {
+                hostAddress = NetworkUtility.getLocalHost();
+            } else {
+                try {
+                    hostAddress = InetAddress.getByName(hostName);
+                } catch(UnknownHostException e) {
+                    hostAddress = NetworkUtility.getLocalHost();
+                    logger.error("Could not resolve host name - falling back to {} ", hostAddress, e);
+                }
+            }
+            
+            dnsAddress = hostAddress;
+        }
+        
+        // Emergency stop if DNS address manages to be null somehow
+        if(dnsAddress == null) {
+            logger.fatal("ABORTING - dnsAddress is null!");
             System.exit(1);
         }
         
@@ -96,7 +128,7 @@ public class Entralinked {
         playerManager = new PlayerManager();
         
         // Create DNS server
-        dnsServer = new DnsServer(hostAddress);
+        dnsServer = new DnsServer(dnsAddress);
         
         // Create GameSpy server
         gameSpyServer = new GameSpyServer(this);
@@ -113,13 +145,13 @@ public class Entralinked {
         
         // Post-startup
         if(started) {
-            String hostIpAddress = hostAddress.getHostAddress();
+            String dnsIpAddress = dnsAddress.getHostAddress();
             logger.info("Startup complete! Took a total of {} milliseconds", System.currentTimeMillis() - beginTime);
-            logger.info("Configure your DS to use the following DNS server: {}", hostIpAddress);
+            logger.info("Configure your DS to use the following DNS server: {}", dnsIpAddress);
             
             if(mainView != null) {
                 SwingUtilities.invokeLater(() -> {
-                    mainView.setStatusLabelText("Configure your DS to use the following DNS server: %s".formatted(hostIpAddress));
+                    mainView.setStatusLabelText("Configure your DS to use the following DNS server: %s".formatted(dnsIpAddress));
                 });
             }
         } else {
