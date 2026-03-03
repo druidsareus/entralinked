@@ -97,19 +97,21 @@ public class Entralinked {
             }
         }
         
-        // Fall back to host address if DNS address not configured
+        // Auto-detect host machine IP if DNS address not configured
         if(dnsAddress == null) {
             InetAddress hostAddress = null;
             String hostName = configuration.hostName();
             
             if(hostName.equals("local") || hostName.equals("localhost")) {
                 hostAddress = NetworkUtility.getLocalHost();
+                logger.info("DNS address not configured - auto-detecting host machine IP address");
             } else {
                 try {
                     hostAddress = InetAddress.getByName(hostName);
+                    logger.info("Using DNS address from hostname configuration: {}", hostName);
                 } catch(UnknownHostException e) {
                     hostAddress = NetworkUtility.getLocalHost();
-                    logger.error("Could not resolve host name - falling back to {} ", hostAddress, e);
+                    logger.error("Could not resolve host name {} - falling back to auto-detected IP: {}", hostName, hostAddress, e);
                 }
             }
             

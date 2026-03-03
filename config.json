@@ -1,0 +1,8 @@
+{
+  "hostName" : "local",
+  "dnsAddress" : null,
+  "clearPlayerDreamInfoOnWake" : true,
+  "allowOverwritingPlayerDreamInfo" : false,
+  "allowPlayerGameVersionMismatch" : false,
+  "allowWfcRegistrationThroughLogin" : true
+}

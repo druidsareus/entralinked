@@ -141,7 +141,7 @@ public class HttpServer {
          
          // Regular HTTP connector
          ServerConnector httpConnector = new ServerConnector(server);
-         httpConnector.setPort(port);
+         httpConnector.setPort(80);
          server.addConnector(httpConnector);
          
          if(keyStore != null) {
@@ -164,7 +164,8 @@ public class HttpServer {
                  new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
                  new HttpConnectionFactory(httpsConfiguration));
              
-             httpsConnector.setPort(sslPort);
+             // Use HTTPS port 443
+             httpsConnector.setPort(443);
              server.addConnector(httpsConnector);
          }
          

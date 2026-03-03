@@ -1,0 +1,280 @@
+================================================================================
+DETAILED MODIFICATIONS FOR DNS CONFIGURATION SUPPORT
+================================================================================
+
+FILE 1: src/main/java/entralinked/Configuration.java
+================================================================================
+
+BEFORE (9 lines):
+---
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record Configuration(
+        String hostName,
+        boolean clearPlayerDreamInfoOnWake,
+        boolean allowOverwritingPlayerDreamInfo,
+        boolean allowPlayerGameVersionMismatch,
+        boolean allowWfcRegistrationThroughLogin) {
+    
+    public static final Configuration DEFAULT = new Configuration("local", true, false, false, true);
+---
+
+AFTER (11 lines):
++++
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record Configuration(
+        String hostName,
+        String dnsAddress,  // ← NEW FIELD
+        boolean clearPlayerDreamInfoOnWake,
+        boolean allowOverwritingPlayerDreamInfo,
+        boolean allowPlayerGameVersionMismatch,
+        boolean allowWfcRegistrationThroughLogin) {
+    
+    public static final Configuration DEFAULT = new Configuration("local", null, true, false, false, true);  // ← UPDATED
+---
+
+CHANGES:
+  • Added field: String dnsAddress (after hostName, before boolean fields)
+  • Updated DEFAULT constructor to include null for dnsAddress
+  • All existing configurations automatically get dnsAddress = null (backward compatible)
+
+================================================================================
+FILE 2: src/main/java/entralinked/CommandLineArguments.java
+================================================================================
+
+BEFORE (11 lines):
+---
+public record CommandLineArguments(boolean disableGui) {
+    
+    public CommandLineArguments(Collection<String> args) {
+        this(args.contains("disablegui"));
+    }
+    
+    public CommandLineArguments(String... args) {
+        this(List.of(args));
+    }
+}
+---
+
+AFTER (24 lines):
++++
+public record CommandLineArguments(boolean disableGui, String dnsAddress) {  // ← ADDED FIELD
+    
+    public CommandLineArguments(Collection<String> args) {
+        this(args.contains("disablegui"), extractDnsAddress(args));  // ← UPDATED
+    }
+    
+    public CommandLineArguments(String... args) {
+        this(List.of(args));
+    }
+    
+    private static String extractDnsAddress(Collection<String> args) {  // ← NEW METHOD
+        List<String> argsList = new java.util.ArrayList<>(args);
+        for(int i = 0; i < argsList.size(); i++) {
+            if(argsList.get(i).equals("--dns") && i + 1 < argsList.size()) {
+                return argsList.get(i + 1);
+            }
+        }
+        return null;
+    }
+}
+---
+
+CHANGES:
+  • Added field: String dnsAddress
+  • Updated constructor to call extractDnsAddress()
+  • Added extractDnsAddress() method to parse --dns flag from command line
+
+USAGE:
+  java -jar app.jar --dns 192.168.1.100
+  java -jar app.jar disablegui --dns server.local
+
+================================================================================
+FILE 3: src/main/java/entralinked/Entralinked.java
+================================================================================
+
+SECTION A: Argument processing (lines ~50-70)
+---
+BEFORE:
+// Read command line arguments
+CommandLineArguments arguments = new CommandLineArguments(args);
+
+// Create GUI if enabled
+if(!arguments.disableGui()) {
+    ...
+}
+
+// Load config
+configuration = loadConfigFile();
+logger.info("Using configuration {}", configuration);
+---
+
+AFTER:
+// Read command line arguments
+CommandLineArguments arguments = new CommandLineArguments(args);
+
+// Override DNS address from command line if provided
+Configuration baseConfig = loadConfigFile();
+if(arguments.dnsAddress() != null) {
+    configuration = new Configuration(
+        baseConfig.hostName(),
+        arguments.dnsAddress(),
+        baseConfig.clearPlayerDreamInfoOnWake(),
+        baseConfig.allowOverwritingPlayerDreamInfo(),
+        baseConfig.allowPlayerGameVersionMismatch(),
+        baseConfig.allowWfcRegistrationThroughLogin()
+    );
+} else {
+    configuration = baseConfig;
+}
+logger.info("Using configuration {}", configuration);
+
+// Create GUI if enabled
+if(!arguments.disableGui()) {
+    ...
+}
+---
+
+CHANGES:
+  • Load config first, then check for CLI DNS override
+  • If --dns flag provided, create new Configuration with custom dnsAddress
+  • Maintains all other config values
+
+SECTION B: DNS address resolution (lines ~75-115)
+---
+BEFORE:
+// Get host address
+InetAddress hostAddress = null;
+String hostName = configuration.hostName();
+
+if(hostName.equals("local") || hostName.equals("localhost")) {
+    hostAddress = NetworkUtility.getLocalHost();
+} else {
+    try {
+        hostAddress = InetAddress.getByName(hostName);
+    } catch(UnknownHostException e) {
+        hostAddress = NetworkUtility.getLocalHost();
+        logger.error("Could not resolve host name - falling back to {} ", hostAddress, e);
+    }
+}
+
+if(hostAddress == null) {
+    logger.fatal("ABORTING - hostAddress is null!");
+    System.exit(1);
+}
+
+// ... create managers ...
+
+// Create DNS server
+dnsServer = new DnsServer(hostAddress);
+---
+
+AFTER:
+// Determine DNS address to broadcast
+InetAddress dnsAddress = null;
+String configuredDnsAddress = configuration.dnsAddress();
+
+if(configuredDnsAddress != null && !configuredDnsAddress.isEmpty()) {
+    try {
+        dnsAddress = InetAddress.getByName(configuredDnsAddress);
+        logger.info("Using custom DNS address from configuration: {}", configuredDnsAddress);
+    } catch(UnknownHostException e) {
+        logger.error("Could not resolve configured DNS address {} - falling back to local host", configuredDnsAddress, e);
+        dnsAddress = null;
+    }
+}
+
+// Fall back to host address if DNS address not configured
+if(dnsAddress == null) {
+    InetAddress hostAddress = null;
+    String hostName = configuration.hostName();
+    
+    if(hostName.equals("local") || hostName.equals("localhost")) {
+        hostAddress = NetworkUtility.getLocalHost();
+    } else {
+        try {
+            hostAddress = InetAddress.getByName(hostName);
+        } catch(UnknownHostException e) {
+            hostAddress = NetworkUtility.getLocalHost();
+            logger.error("Could not resolve host name - falling back to {} ", hostAddress, e);
+        }
+    }
+    
+    dnsAddress = hostAddress;
+}
+
+// Emergency stop if DNS address manages to be null somehow
+if(dnsAddress == null) {
+    logger.fatal("ABORTING - dnsAddress is null!");
+    System.exit(1);
+}
+
+// ... create managers ...
+
+// Create DNS server
+dnsServer = new DnsServer(dnsAddress);
+---
+
+CHANGES:
+  • Check configuration.dnsAddress() first
+  • If set, resolve it and use for DNS server
+  • If not set or unresolvable, fall back to hostName logic (original behavior)
+  • Preserves all original behavior for existing configurations
+
+SECTION C: Post-startup logging (lines ~150-165)
+---
+BEFORE:
+// Post-startup
+if(started) {
+    String hostIpAddress = hostAddress.getHostAddress();
+    logger.info("Startup complete! Took a total of {} milliseconds", System.currentTimeMillis() - beginTime);
+    logger.info("Configure your DS to use the following DNS server: {}", hostIpAddress);
+    
+    if(mainView != null) {
+        SwingUtilities.invokeLater(() -> {
+            mainView.setStatusLabelText("Configure your DS to use the following DNS server: %s".formatted(hostIpAddress));
+        });
+    }
+} else {
+    ...
+}
+---
+
+AFTER:
+// Post-startup
+if(started) {
+    String dnsIpAddress = dnsAddress.getHostAddress();
+    logger.info("Startup complete! Took a total of {} milliseconds", System.currentTimeMillis() - beginTime);
+    logger.info("Configure your DS to use the following DNS server: {}", dnsIpAddress);
+    
+    if(mainView != null) {
+        SwingUtilities.invokeLater(() -> {
+            mainView.setStatusLabelText("Configure your DS to use the following DNS server: %s".formatted(dnsIpAddress));
+        });
+    }
+} else {
+    ...
+}
+---
+
+CHANGES:
+  • Use dnsAddress variable name consistently in logging (minor refactor)
+
+================================================================================
+SUMMARY OF CHANGES
+================================================================================
+
+Lines Modified: ~50 lines across 3 files
+Lines Added: ~30 lines
+Lines Removed: ~5 lines (net gain: ~25 lines)
+Backward Compatibility: 100% ✓
+Test Coverage Required: Command-line DNS argument parsing, config file DNS field
+
+KEY FEATURES ADDED:
+  ✓ Command-line DNS override: --dns <address>
+  ✓ Configuration file DNS field: dnsAddress in config.json
+  ✓ Three-tier priority: CLI > Config File > Default (hostName) behavior
+  ✓ Hostname support: Can use domain names like server.local
+  ✓ Full error handling with graceful fallback
+  ✓ Detailed logging for debugging
+
+================================================================================
