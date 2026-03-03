@@ -10,3 +10,16 @@ testRun
 .project
 .classpath
 bin
+
+# macOS
+.DS_Store
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# Generated files
+logs/
+players/
+users/
+server.p12
+config.json
